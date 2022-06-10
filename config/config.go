@@ -1,58 +1,54 @@
 package config
 
 import (
-	"fmt"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
-	"os"
-	"path/filepath"
 )
 
-var cfgFile string
-
-var cmd = &cobra.Command{
-	Use:   "mlp",
-	Short: "API for MLP Platform.",
-	Long:  `API for Machine Learning Platform Developed By SanDataSystem.`,
+type Config struct {
+	Application Application `json:"application"`
+	Logging     Logging     `json:"logging"`
+	Database    Database    `json:"database"`
 }
 
-func Exists(name string) bool {
-	_, err := os.Stat(name)
-	return !os.IsNotExist(err)
+type Application struct {
+	PageSize             int64    `json:"PageSize"`
+	JwtSecret            int64    `json:"JwtSecret"`
+	ImageSavePath        string   `json:"ImageSavePath"`
+	ImageMaxSize         int64    `json:"ImageMaxSize"`
+	ImageAllowExtensions []string `json:"ImageAllowExtensions"`
+	RunMode              string   `json:"RunMode"`
+	HTTPPort             int64    `json:"HttpPort"`
+	ReadTimeout          int64    `json:"ReadTimeout"`
+	WriteTimeout         int64    `json:"WriteTimeout"`
 }
 
-func Execute() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+type Database struct {
+	Type     string `json:"Type"`
+	User     string `json:"User"`
+	Password string `json:"Password"`
+	Host     string `json:"Host"`
+	Port     int64  `json:"Port"`
+	Name     string `json:"Name"`
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-	cmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/mlp/mlp.yaml)")
+type Logging struct {
+	LogSavePath      string `json:"LogSavePath"`
+	LogSaveName      string `json:"LogSaveName"`
+	LogFileExtension string `json:"LogFileExtension"`
+	TimeFormat       int64  `json:"TimeFormat"`
 }
 
-func initConfig() {
-	confFilePath := "/etc/mlp"
-	confFileName := "mlp.yaml"
-
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(confFilePath)
-		viper.SetConfigName(confFileName)
-	}
-	if Exists(filepath.Join(confFilePath, confFileName)) == false {
-		log.Fatal("File: %s not found in %s directory", confFileName, confFilePath)
-	}
+// LoadConfig reads configuration from file or environment variables.
+func LoadConfig(path string) (config Config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName("mlp")
+	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
-	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
-	if err == nil {
-		log.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
-		log.Fatal(err)
+	err = viper.ReadInConfig()
+	if err != nil {
+		log.Fatalln("Error in reading the mlp.yaml file.")
 	}
+	err = viper.Unmarshal(&config)
+	return
 }
