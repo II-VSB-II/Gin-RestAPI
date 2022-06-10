@@ -2,35 +2,42 @@ package main
 
 import (
 	"fmt"
-	v1 "github.com/II-VSB-II/Gin-RestAPI/api/v1"
-	"github.com/II-VSB-II/Gin-RestAPI/config"
-	"github.com/II-VSB-II/Gin-RestAPI/initialize"
-	"log"
+
+	api "github.com/II-VSB-II/Gin-RestAPI/api"
+	utils "github.com/II-VSB-II/Gin-RestAPI/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
-func main() {
+func init() {
+	// Set gin mode
+	mode := utils.GetEnvVar("API_MODE")
+	gin.SetMode(mode)
+}
 
-	config, err := config.LoadConfig(".")
-	if err != nil {
-		log.Fatalln("cannot load config:", err)
+func main() {
+	// Setup the api
+	api := api.SetupApp()
+
+	// Read ADDR and port
+	address := utils.GetEnvVar("API_ADDRESS")
+	port := utils.GetEnvVar("API_PORT")
+	https := utils.GetEnvVar("API_HTTPS")
+
+	// HTTPS mode
+	if https == "true" {
+		certFile := utils.GetEnvVar("SSL_CERT")
+		certKey := utils.GetEnvVar("SSL_KEY")
+		log.Info().Msgf("Starting Machine Learning Platform API on https//:%s:%s", address, port)
+
+		if err := api.RunTLS(fmt.Sprintf("%s:%s", address, port), certFile, certKey); err != nil {
+			log.Fatal().Err(err).Msg("Error when starting the Machine Learning Platform API on HTTPS.")
+		}
+	}
+	// HTTP mode
+	log.Info().Msgf("Starting Machine Learning Platform API on https//:%s:%s", address, port)
+	if err := api.Run(fmt.Sprintf("%s:%s", address, port)); err != nil {
+		log.Fatal().Err(err).Msg("Error when starting the Machine Learning Platform API on HTTP.")
 	}
 
-	/*
-		docs.SwaggerInfo.Title = "Machine Learning Platform"
-		docs.SwaggerInfo.Description = "Machine Learning Platform for Training, Tracking, Deploying and Monitoring AI/ML models."
-		docs.SwaggerInfo.Version = "1.0"
-		docs.SwaggerInfo.BasePath = "/api/v1"
-		docs.SwaggerInfo.Schemes = []string{"http", "https"}
-
-		err = initialize.InitMySQL()
-		if err != nil {
-			panic(err)
-		}
-		defer initialize.Close()
-	*/
-
-	r := initialize.SetupRouter()
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("/version", v1.Version)
-	r.Run(fmt.Sprintf(":%d", config.Application.HTTPPort))
 }

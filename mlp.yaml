@@ -13,13 +13,12 @@ application:
   WriteTimeout: 60
 logging:
   LogSavePath: logs/
-  LogSaveName: log
-  LogFileExtension: log
-  TimeFormat: 2006-01-02 15:04:05
+  LogSaveName: mlp.log
+
 database:
-  Type: mysql
-  User: root
-  Password: rootroot
-  Host: 127.0.0.1
-  Port: 3306
-  Name: blog
+  TimeZone: Asia/Shanghai
+  User: mlp
+  Password: mlp123
+  Host: localhost
+  Port: 5431
+  Name: mlp
